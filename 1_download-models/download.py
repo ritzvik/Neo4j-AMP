@@ -14,5 +14,5 @@ kaggle.api.authenticate()
 if not os.path.exists(const.dataset_path):
     os.mkdir(const.dataset_path)
 kaggle.api.dataset_download_files(
-    dataset="jessicali9530/celeba-dataset", path=const.dataset_path, unzip=True
+    dataset=const.dataset_name, path=const.dataset_path, unzip=True
 )
