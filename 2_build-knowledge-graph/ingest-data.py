@@ -5,8 +5,9 @@ from langchain.graphs import Neo4jGraph
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.vectorstores.neo4j_vector import Neo4jVector
 
-from utils.data_utils import create_cypher_query_to_insert_data, get_data_file_path, get_json_data, create_query_for_category_insertion
 import utils.constants as const
+
+from utils.data_utils import create_cypher_query_to_insert_data, get_data_file_path, get_json_data, create_query_for_category_insertion, create_indices_queries
 from utils.neo4j_utils import get_neo4j_credentails, is_neo4j_server_up, reset_neo4j_server, wait_for_neo4j_server
 
 
@@ -37,6 +38,8 @@ Neo4jVector.from_existing_graph(
     embedding_node_property='embedding',
 )
 
+for q in create_indices_queries():
+    graph.query(q)
 data_file_path = get_data_file_path(const.dataset_path)
 json_data_iter = get_json_data(data_file_path)
 
@@ -48,7 +51,7 @@ def commit_data(json_obj: dict, obj_number: int):
     except Exception as e:
         print(f'Error for paper #{obj_number}: {e}')
 
-parallel_tx = 200
+parallel_tx = 100
 i = 0
 threadPoolFutures = []
 executor = ThreadPoolExecutor(max_workers=parallel_tx)
@@ -59,3 +62,17 @@ for json_data in json_data_iter:
         executor.shutdown(wait=True)
         threadPoolFutures = []
         executor = ThreadPoolExecutor(max_workers=parallel_tx)
+
+if threadPoolFutures:
+    executor.shutdown(wait=True)
+
+Neo4jVector.from_existing_graph(
+    embedding=embedding,
+    url=get_neo4j_credentails()["uri"],
+    username=get_neo4j_credentails()["username"],
+    password=get_neo4j_credentails()["password"],
+    index_name='paper_embedding_index',
+    node_label="Paper",
+    text_node_properties=['title', 'abstract'],
+    embedding_node_property='embedding',
+)

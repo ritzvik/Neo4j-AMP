@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Iterator
+from typing import Iterator, List
 import requests
 from bs4 import BeautifulSoup
 
@@ -84,6 +84,10 @@ def create_query_for_category_insertion() -> str:
         query += f'''
             CREATE (category_{i}:Category {{code: "{code}", title: "{title}", description: "{desc}"}})
         '''
+    
+    query += f'''
+        CREATE (category_astro_ph:Category {{code: "astro-ph", title: "General Astrophysics", description: "General Astrophysics"}})
+    '''
     return query
 
 def get_data_file_path(dir_name) -> str:
@@ -101,16 +105,18 @@ def get_json_data(file_path: str) -> Iterator[dict]:
 
 
 def sanitize(text):
-    text = str(text).replace("'","").replace('"','').replace('{','').replace('}', '').replace('\n', ' ')
+    text = str(text).replace("'","").replace('"','').replace('{','').replace('}', '').replace('\n', ' ').replace('\\u', 'u')
     return text
+
+def create_indices_queries() -> List[str]:
+    return [
+      'CREATE TEXT INDEX category_code IF NOT EXISTS FOR (c:Category) ON (c.code)',
+      'CREATE TEXT INDEX author_lastName IF NOT EXISTS FOR (a:Author) ON (a.lastName)',
+    ]
 
 def create_cypher_query_to_insert_data(obj: dict) -> str:
     query = f'''
-    MERGE (paper:Paper {{id: "{obj['id']}"}})
-    ON CREATE 
-    SET paper.title = "{sanitize(obj['title'])}",
-        paper.abstract = "{sanitize(obj['abstract'])}"
-    
+    CREATE (paper:Paper {{id: "{obj['id']}", title: "{sanitize(obj['title'])}", abstract: "{sanitize(obj['abstract'])}"}})
     '''
 
     categories = obj.get('categories').split(' ')

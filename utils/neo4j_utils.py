@@ -95,18 +95,14 @@ def create_deployment_spec_for_neo4j():
                             ),
                             volume_mounts=[
                                 client.V1VolumeMount(
-                                    name="neo4j-data",
-                                    mount_path="/data",
-                                ),
-                                client.V1VolumeMount(
                                     name="neo4j-plugins",
                                     mount_path="/plugins",
                                 ),
                                 client.V1VolumeMount(
                                     name="filesystem-access",
-                                    mount_path="/neo4j-backup",
-                                    sub_path="neo4j-backup"
-                                )
+                                    mount_path="/data",
+                                    sub_path="neo4j-volume"
+                                ),
                             ]
                         )
                     ],
