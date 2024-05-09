@@ -89,14 +89,7 @@ def create_query_for_category_insertion() -> str:
         CREATE (category_astro_ph:Category {{code: "astro-ph", title: "General Astrophysics", description: "General Astrophysics"}})
     '''
     return query
-
-def get_data_file_path(dir_name) -> str:
-    files = os.listdir(dir_name)
-    if files:
-        return os.path.join(dir_name, files[0])
-    else:
-        return None
-    
+  
 
 def get_json_data(file_path: str) -> Iterator[dict]:
     lines = open(file_path, 'r').readlines()

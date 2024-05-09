@@ -16,4 +16,5 @@ supported_llm_models = {
 model_name="TheBloke/Mistral-7B-Instruct-v0.2-GGUF"
 embed_model_name="thenlper/gte-large"
 dataset_path = "./data/"
+dataset_filename = "dataset_filename.txt"
 dataset_name = "Cornell-University/arxiv"
