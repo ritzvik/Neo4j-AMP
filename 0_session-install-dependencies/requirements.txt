@@ -30,3 +30,4 @@ requests
 kubernetes==29.0.0
 neo4j==5.19.0
 kaggle==1.6.12
+beautifulsoup4==4.12.3

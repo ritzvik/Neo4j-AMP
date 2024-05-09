@@ -11,7 +11,7 @@ def get_model_path(model_name):
         resume_download=True,
         cache_dir=const.MODELS_PATH,
         local_files_only=False,
-        token=const.hf_token,
+        token=const.huggingface_token,
     )
     return model_path
 
