@@ -8,7 +8,7 @@ from langchain.vectorstores.neo4j_vector import Neo4jVector
 
 import utils.constants as const
 
-from utils.data_utils import create_cypher_query_to_insert_data, get_json_data, create_query_for_category_insertion, create_indices_queries
+from utils.data_utils import create_query_for_category_insertion, get_json_data, create_cypher_batch_query_to_insert_data, create_indices_queries
 from utils.neo4j_utils import get_neo4j_credentails, is_neo4j_server_up, reset_neo4j_server, wait_for_neo4j_server
 
 
@@ -44,28 +44,22 @@ for q in create_indices_queries():
 data_file_path = open(os.path.join(const.dataset_path, const.dataset_filename), 'r').read().strip()
 json_data_iter = get_json_data(data_file_path)
 
-def commit_data(json_obj: dict, obj_number: int):
-    print(f'paper #: {obj_number}  paper ID: {json_obj["id"]}')
-    try:
-        query = create_cypher_query_to_insert_data(json_obj)
-        graph.query(query)
-    except Exception as e:
-        print(f'Error for paper #{obj_number}: {e}')
+json_data_buffer = list()
+batch_size=1000
+for i, json_data in enumerate(json_data_iter):
+    json_data_buffer.append(json_data)
+    if len(json_data_buffer) >= batch_size:
+        try:
+            query = create_cypher_batch_query_to_insert_data(json_data_buffer)
+            graph.query(query)
+        except Exception as e:
+            print(f'Error for batch ending with paper #{i}: {e}')
+        json_data_buffer = []
+        print(f'paper #: {i}')
 
-parallel_tx = 100
-i = 0
-threadPoolFutures = []
-executor = ThreadPoolExecutor(max_workers=parallel_tx)
-for json_data in json_data_iter:
-    i += 1
-    threadPoolFutures.append(executor.submit(commit_data, json_obj=json_data, obj_number=i))
-    if i % parallel_tx == 0:
-        executor.shutdown(wait=True)
-        threadPoolFutures = []
-        executor = ThreadPoolExecutor(max_workers=parallel_tx)
-
-if threadPoolFutures:
-    executor.shutdown(wait=True)
+if json_data_buffer:
+    query = create_cypher_batch_query_to_insert_data(json_data_buffer)
+    graph.query(query)
 
 Neo4jVector.from_existing_graph(
     embedding=embedding,

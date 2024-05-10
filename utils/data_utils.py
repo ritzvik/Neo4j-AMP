@@ -3,6 +3,7 @@ import os
 from typing import Iterator, List
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 """
 # Here's a sample json from the dataset
@@ -107,29 +108,21 @@ def create_indices_queries() -> List[str]:
       'CREATE TEXT INDEX author_lastName IF NOT EXISTS FOR (a:Author) ON (a.lastName)',
     ]
 
-def create_cypher_query_to_insert_data(obj: dict) -> str:
-    query = f'''
-    CREATE (paper:Paper {{id: "{obj['id']}", title: "{sanitize(obj['title'])}", abstract: "{sanitize(obj['abstract'])}"}})
-    '''
-
-    categories = obj.get('categories').split(' ')
-
-    for i, category in enumerate(categories):
-        query += f'''
-        MERGE (category_{i}:Category {{code: "{category}"}})
-
-        MERGE (paper)-[:BELONGS_TO_CATEGORY]->(category_{i})
-
-        '''
-
-    authors = obj.get('authors_parsed')
-
-    for i, author in enumerate(authors):
-        query += f'''
-        MERGE (author_{i}:Author {{lastName: "{author[0]}", firstName: "{author[1]}", suffix: "{author[2]}"}})
-
-        MERGE (paper)-[:AUTHORED_BY]->(author_{i})
-
-        '''
-
+def create_cypher_batch_query_to_insert_data(objs: List[dict]) ->str:
+    items_in_batch = list()
+    for obj in objs:
+      published_date = datetime.strptime(obj['versions'][0]['created'], '%a, %d %b %Y %H:%M:%S %Z')
+      neo4j_date_string = f'date("{published_date.strftime("%Y-%m-%d")}")'
+      categories = obj.get('categories').split(' ')
+      categories_neo4j = "[\""+("\",\"").join(categories)+"\"]"
+      authors = obj.get('authors_parsed')
+      authors_neo4j = "["+",".join([f'{{lastName: "{a[0]}", firstName: "{a[1]}", suffix: "{a[2]}"}}' for a in authors])+"]"
+      batch_string = f'{{id: "{obj["id"]}", title: "{sanitize(obj["title"])}", abstract: "{sanitize(obj["abstract"])}", published: {neo4j_date_string}, categories: {categories_neo4j}, authors: {authors_neo4j}}}'
+      items_in_batch.append(batch_string)
+    query = r'''
+    UNWIND $unwind_string as item
+    CREATE (paper:Paper {id: item.id, title: item.title, abstract: item.abstract, published: item.published})
+    FOREACH (category in item.categories | MERGE (c:Category {code: category}) MERGE (paper)-[:BELONGS_TO_CATEGORY]->(c))
+    FOREACH (author in item.authors | MERGE (a:Author {lastName: author.lastName, firstName: author.firstName, suffix: author.suffix}) MERGE (paper)-[:AUTHORED_BY]->(a))
+    '''.replace('$unwind_string', '['+','.join(items_in_batch)+']')
     return query

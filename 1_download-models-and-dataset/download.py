@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import os
 import subprocess
@@ -26,14 +27,19 @@ kaggle.api.dataset_download_files(
 
 source_file = get_data_file_path(const.dataset_path)
 destination_file = source_file.replace('.json', '_formatted.json')
+# we will filter out only AI/ML papers puslished post 2018
 categories_to_filter = ['cs.AI', 'cs.LG', 'cs.CL', 'stat.ML']
+cutoff_year = 2023
 
 data_points = 0
 with open(source_file, 'r') as fr:
     lines = fr.readlines()
     with open(destination_file, 'w') as fw:
         for i, line in enumerate(lines):
-            if any(c in line for c in categories_to_filter):
+            json_obj = json.loads(line)
+            published_date = datetime.strptime(json_obj['versions'][0]['created'], '%a, %d %b %Y %H:%M:%S %Z')
+            categories = json_obj.get('categories').split(' ')
+            if published_date.year >= cutoff_year and any(c in categories for c in categories_to_filter):
                 data_points += 1
                 if random.uniform(0, 1) <= 0.01:
                     print(f'paper #: {i}') # we print only 1% of the entries added
