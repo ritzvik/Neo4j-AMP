@@ -27,7 +27,7 @@ kaggle.api.dataset_download_files(
 
 source_file = get_data_file_path(const.dataset_path)
 destination_file = source_file.replace('.json', '_formatted.json')
-# we will filter out only AI/ML papers puslished post 2018
+# we will filter out only AI/ML papers puslished post 2023
 categories_to_filter = ['cs.AI', 'cs.LG', 'cs.CL', 'stat.ML']
 cutoff_year = 2023
 
