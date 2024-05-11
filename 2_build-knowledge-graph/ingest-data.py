@@ -45,7 +45,8 @@ data_file_path = open(os.path.join(const.dataset_path, const.dataset_filename), 
 json_data_iter = get_json_data(data_file_path)
 
 json_data_buffer = list()
-batch_size=1000
+batch_size=100
+errors_in_ingesting = 0
 for i, json_data in enumerate(json_data_iter):
     json_data_buffer.append(json_data)
     if len(json_data_buffer) >= batch_size:
@@ -53,13 +54,20 @@ for i, json_data in enumerate(json_data_iter):
             query = create_cypher_batch_query_to_insert_data(json_data_buffer)
             graph.query(query)
         except Exception as e:
-            print(f'Error for batch ending with paper #{i}: {e}')
+            errors_in_ingesting += 1
+            print(f'Error for batch ending with paper #{i}: {e}'[:1000]+"\n\n---\n\n")
         json_data_buffer = []
         print(f'paper #: {i}')
 
 if json_data_buffer:
-    query = create_cypher_batch_query_to_insert_data(json_data_buffer)
-    graph.query(query)
+    try:
+        query = create_cypher_batch_query_to_insert_data(json_data_buffer)
+        graph.query(query)
+    except Exception as e:
+        errors_in_ingesting += 1
+        print(f'Error for last batch: {e}'[:1000]+"\n\n---\n\n")
+
+print(f'\n\nErrors in ingesting: {errors_in_ingesting}\n\n')
 
 Neo4jVector.from_existing_graph(
     embedding=embedding,
