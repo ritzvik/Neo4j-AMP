@@ -55,7 +55,7 @@ for i, json_data in enumerate(json_data_iter):
             graph.query(query)
         except Exception as e:
             errors_in_ingesting += 1
-            print(f'Error for batch ending with paper #{i}: {e}'[:1000]+"\n\n---\n\n")
+            print(f'\nError for last batch: {e}'[:1000]+"..........."+f'{e}'[-500:]+"\n\n---\n\n")
         json_data_buffer = []
         print(f'paper #: {i}')
 
