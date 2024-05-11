@@ -67,7 +67,7 @@ if json_data_buffer:
         errors_in_ingesting += 1
         print(f'Error for last batch: {e}'[:1000]+"\n\n---\n\n")
 
-print(f'\n\nErrors in ingesting: {errors_in_ingesting}\n\n')
+print(f'\n\nErrors in ingesting: {errors_in_ingesting}\nMissing papers: {errors_in_ingesting*batch_size}\n\n')
 
 Neo4jVector.from_existing_graph(
     embedding=embedding,
