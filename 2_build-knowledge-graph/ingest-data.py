@@ -65,7 +65,7 @@ if json_data_buffer:
         graph.query(query)
     except Exception as e:
         errors_in_ingesting += 1
-        print(f'Error for last batch: {e}'[:1000]+"\n\n---\n\n")
+        print(f'Error for last batch: {e}'[:1000]+"..........."+f'{e}'[-500:]+"\n\n---\n\n")
 
 print(f'\n\nErrors in ingesting: {errors_in_ingesting}\nMissing papers: {errors_in_ingesting*batch_size}\n\n')
 
