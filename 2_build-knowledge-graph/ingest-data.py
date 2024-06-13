@@ -47,6 +47,7 @@ json_data_iter = get_json_data(data_file_path)
 json_data_buffer = list()
 batch_size=100
 errors_in_ingesting = 0
+f_err = open(os.path.join(const.dataset_path, "ingestion_errors.log"), "w")
 for i, json_data in enumerate(json_data_iter):
     json_data_buffer.append(json_data)
     if len(json_data_buffer) >= batch_size:
@@ -56,6 +57,7 @@ for i, json_data in enumerate(json_data_iter):
         except Exception as e:
             errors_in_ingesting += 1
             print(f'\nError for batch ending with paper #{i}: {e}'[:1000]+"..........."+f'{e}'[-500:]+"\n\n---\n\n")
+            f_err.write(str(e)+"\n\n")
         json_data_buffer = []
         print(f'paper #: {i}')
 
@@ -66,6 +68,9 @@ if json_data_buffer:
     except Exception as e:
         errors_in_ingesting += 1
         print(f'\nError for last batch: {e}'[:1000]+"..........."+f'{e}'[-500:]+"\n\n---\n\n")
+        f_err.write(str(e)+"\n\n")
+
+f_err.close()
 
 print(f'\n\nErrors in ingesting: {errors_in_ingesting}\nMissing papers: {errors_in_ingesting*batch_size}\n\n')
 
