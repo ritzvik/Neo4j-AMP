@@ -3,6 +3,7 @@ peft==0.4.0
 bitsandbytes==0.40.2
 trl==0.4.7
 langchain==0.1.17
+langchain-openai==0.1.7
 llama-index==0.10.29
 llama-index-cli==0.1.11
 llama-index-core==0.10.29
