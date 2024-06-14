@@ -20,3 +20,6 @@ embed_model_name="thenlper/gte-large"
 dataset_path = "./data/"
 dataset_filename = "dataset_filename.txt"
 dataset_name = "Cornell-University/arxiv"
+
+cai_model_url = "https://ml-2fed18e9-f4c.eng-ml-l.vnu8-sqze.cloudera.site/namespaces/serving-default/endpoints/llama3-70b-awq-hf"
+cai_model_id = "fi7i-3ew0-0a8o-ge3p"
