@@ -21,5 +21,5 @@ dataset_path = "./data/"
 dataset_filename = "dataset_filename.txt"
 dataset_name = "Cornell-University/arxiv"
 
-cai_model_url = "https://ml-2fed18e9-f4c.eng-ml-l.vnu8-sqze.cloudera.site/namespaces/serving-default/endpoints/nvidia-llama3-8b-qa-hf/v1"
-cai_model_id = "thka-q8zf-arj8-4zc5"
+cai_model_url = "https://ml-2fed18e9-f4c.eng-ml-l.vnu8-sqze.cloudera.site/namespaces/serving-default/endpoints/nousresearch-llama3/v1"
+cai_model_id = "htwa-7bsc-cn3k-v87h"
