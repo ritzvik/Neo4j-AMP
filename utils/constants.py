@@ -1,5 +1,10 @@
 import os
 
+seed_arxiv_paper_ids = [
+    "2302.04761",
+    "1706.03762",
+    "2312.05934",
+]
 
 MODELS_PATH = "./models"
 EMBED_PATH = "./embed_models"
