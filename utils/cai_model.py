@@ -1,4 +1,3 @@
-from langchain_core.prompts import PromptTemplate
 from langchain_openai import OpenAI
 from typing import (
     Any,
