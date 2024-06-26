@@ -5,6 +5,8 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
+from utils.arxiv_utils import IngestablePaper
+
 """
 # Here's a sample json from the dataset
 # Category taxonomy: https://arxiv.org/category_taxonomy
@@ -105,8 +107,14 @@ def sanitize(text):
 def create_indices_queries() -> List[str]:
     return [
       'CREATE TEXT INDEX category_code IF NOT EXISTS FOR (c:Category) ON (c.code)',
+      'CREATE TEXT INDEX author_name IF NOT EXISTS FOR (a:Author) ON (a.name)',
+      'CREATE TEXT INDEX paper_id IF NOT EXISTS FOR (p:Paper) ON (p.id)',
+    ]
+    return [
+      'CREATE TEXT INDEX category_code IF NOT EXISTS FOR (c:Category) ON (c.code)',
       'CREATE TEXT INDEX author_lastName IF NOT EXISTS FOR (a:Author) ON (a.lastName)',
     ]
+
 
 def create_cypher_batch_query_to_insert_data(objs: List[dict]) ->str:
     items_in_batch = list()
@@ -124,5 +132,28 @@ def create_cypher_batch_query_to_insert_data(objs: List[dict]) ->str:
     CREATE (paper:Paper {id: item.id, title: item.title, abstract: item.abstract, published: item.published})
     FOREACH (category in item.categories | MERGE (c:Category {code: category}) MERGE (paper)-[:BELONGS_TO_CATEGORY]->(c))
     FOREACH (author in item.authors | MERGE (a:Author {lastName: author.lastName, firstName: author.firstName, suffix: author.suffix}) MERGE (paper)-[:AUTHORED_BY]->(a))
+    '''.replace('$unwind_string', '['+','.join(items_in_batch)+']')
+    return query
+
+def create_cypher_batch_query_to_insert_arxiv_papers(objs: List[IngestablePaper]):
+    items_in_batch = list()
+    for o in objs:
+      neo4j_date_string = f'date("{o.published_date.strftime("%Y-%m-%d")}")'
+      categories_neo4j = "[\""+("\",\"").join(o.categories)+"\"]"
+      authors_neo4j = "[\""+("\",\"").join(o.authors)+"\"]"
+      batch_string = f'{{id: "{o.arxiv_id}", title: "{sanitize(o.title)}", summary: "{sanitize(o.summary)}", published: {neo4j_date_string}, arxiv_link: {o.arxiv_link}, pdf_link{o.pdf_link}, categories: {categories_neo4j}, authors: {authors_neo4j}}}'
+      items_in_batch.append(batch_string)
+    query = r'''
+    UNWIND $unwind_string as item
+    MERGE (paper:Paper {id: item.id})
+    ON MATCH
+      SET
+        paper.title = item.title,
+        paper.summary = item.summary,
+        paper.published = item.published,
+        paper.arxiv_link = item.arxiv_link,
+        paper.pdf_link = item.pdf_link
+    FOREACH (category in item.categories | MERGE (c:Category {code: category}) MERGE (paper)-[:BELONGS_TO_CATEGORY]->(c))
+    FOREACH (author in item.authors | MERGE (a:Author {name: author}) MERGE (paper)-[:AUTHORED_BY]->(a))
     '''.replace('$unwind_string', '['+','.join(items_in_batch)+']')
     return query
