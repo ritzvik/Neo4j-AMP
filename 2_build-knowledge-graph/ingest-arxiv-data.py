@@ -6,9 +6,14 @@ from langchain.vectorstores.neo4j_vector import Neo4jVector
 
 import utils.constants as const
 
-from utils.data_utils import create_query_for_category_insertion, create_indices_queries, create_cypher_batch_query_to_insert_arxiv_papers
+from utils.data_utils import (
+    create_query_for_category_insertion, 
+    create_indices_queries, 
+    create_cypher_batch_query_to_insert_arxiv_papers,
+    create_cypher_batch_query_to_create_citation_relationship
+)
 from utils.neo4j_utils import get_neo4j_credentails, is_neo4j_server_up, reset_neo4j_server, wait_for_neo4j_server
-from utils.arxiv_utils import create_paper_object_from_arxiv_id, cre
+from utils.arxiv_utils import create_paper_object_from_arxiv_id
 
 load_dotenv()
 
@@ -41,8 +46,22 @@ for q in create_indices_queries():
     graph.query(q)
 
 papers_to_insert = [create_paper_object_from_arxiv_id(arxiv_id) for arxiv_id in const.seed_arxiv_paper_ids]
-for paper in papers_to_insert:
-    papers_to_insert.extend([create_paper_object_from_arxiv_id(arxiv_id) for arxiv_id in paper.cited_arxiv_papers])
+number_of_arxiv_ids_to_insert = len([a for aids in [p.arxiv_id for p in papers_to_insert] for a in aids])
+print(f"Total arxiv papers to insert: {number_of_arxiv_ids_to_insert}")
+for paper in papers_to_insert[:len(papers_to_insert)]: # insert for the initial seed papers
+    for aid in paper.cited_arxiv_papers:
+        try:
+            papers_to_insert.append(create_paper_object_from_arxiv_id(aid))
+            print(f"arxiv paper {aid} added to the list.")
+        except Exception as e:
+            print(f"Error in adding arxiv paper {aid} to the list: {e}")
 
 query_to_insert_all_papers = create_cypher_batch_query_to_insert_arxiv_papers(papers_to_insert)
 graph.query(query_to_insert_all_papers)
+
+
+# create citation relationships
+for paper in papers_to_insert:
+    query = create_cypher_batch_query_to_create_citation_relationship(paper.arxiv_id)
+    graph.query(query)
+    print(f"Created citation relationships for paper {paper.arxiv_id}")
