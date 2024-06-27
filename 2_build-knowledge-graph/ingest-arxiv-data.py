@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 from langchain.graphs import Neo4jGraph
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.vectorstores.neo4j_vector import Neo4jVector
+from langchain.text_splitter import RecursiveCharacterTextSplitter, CharacterTextSplitter
+from langchain.docstore.document import Document
 
 import utils.constants as const
 
@@ -65,3 +67,21 @@ for paper in papers_to_insert:
     query = create_cypher_batch_query_to_create_citation_relationship(paper.arxiv_id)
     graph.query(query)
     print(f"Created citation relationships for paper {paper.arxiv_id}")
+
+raw_docs = [Document(page_content=p.full_text, metadata={"arxiv_id": p.arxiv_id}) for p in papers_to_insert]
+# Define chunking strategy
+text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+    encoding_name="cl100k_base",
+    chunk_size=1000, chunk_overlap=20,
+    disallowed_special=(),
+)
+# Chunk the document
+documents = text_splitter.split_documents(raw_docs)
+
+Neo4jVector.from_documents(
+    documents=documents,
+    embedding=embedding,
+    url=get_neo4j_credentails()["uri"],
+    username=get_neo4j_credentails()["username"],
+    password=get_neo4j_credentails()["password"],
+)
