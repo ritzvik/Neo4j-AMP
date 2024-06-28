@@ -4,12 +4,13 @@ import io
 from PyPDF2 import PdfReader
 import re
 from typing import List
+from datetime import datetime, date
 
 import utils.constants as const
 
 
 class IngestablePaper:
-    def __init__(self, arxiv_id: str, arxiv_link: str, title: str, summary: str, authors: List[str], categories: List[str], pdf_link: str, published_date: str, full_text: str, cited_arxiv_papers: List[str]):
+    def __init__(self, arxiv_id: str, arxiv_link: str, title: str, summary: str, authors: List[str], categories: List[str], pdf_link: str, published_date: date, full_text: str, cited_arxiv_papers: List[str]):
         self.arxiv_id = arxiv_id
         self.arxiv_link = arxiv_link
         self.title = title
@@ -62,7 +63,7 @@ def create_paper_object_from_arxiv_id(arxivId: str) -> IngestablePaper:
         authors=[a.name for a in result.authors],
         categories=result.categories,
         pdf_link=pdf_link,
-        published_date=result.published,
+        published_date=result.published.date(),
         full_text=full_text,
         cited_arxiv_papers=cited_arxiv_papers,
     )
